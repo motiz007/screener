@@ -5,9 +5,10 @@ from datetime import datetime, timedelta
 
 try:
     end_date = datetime.now().date()
-    start_date = end_date - timedelta(days=5)
-    intervals = ["15m", "1h", "1d"]
-    currency_pairs = ["EURUSD=X", "GBPUSD=X", "USDJPY=X"]  # Add more currency pairs as needed
+    start_date = end_date - timedelta(days=2)
+    intervals = ["15m", "1h"]
+    currency_pairs = ["EURUSD=X", "GBPUSD=X", "USDJPY=X"]
+    candlestick_patterns = ["CDLENGULFING", "CDLHAMMER", "CDLDOJI", "CDLHARAMI"]
     pair_stats = {}
 
     for pair in currency_pairs:
@@ -16,16 +17,21 @@ try:
         for timeframe in intervals:
             data = yf.download(pair, start=start_date, end=end_date, interval=timeframe)
 
-            if len(data) < 2:  # Ensure there's enough data to compute engulfing patterns
+            if len(data) < 2:
                 print(f"Not enough data for {pair} - {timeframe} interval.")
                 continue
 
-            engulfing = talib.CDLENGULFING(data['Open'], data['High'], data['Low'], data['Close'])
+            for pattern in candlestick_patterns:
+                cdl_func = getattr(talib, pattern)
+                data[pattern] = cdl_func(data['Open'], data['High'], data['Low'], data['Close'])
+        
+            # Create a DataFrame with only the candlestick pattern columns
+            patterns_df = data[candlestick_patterns]
 
-            data['Engulfing'] = engulfing
+            # Filter out rows where all pattern values are 0
+            patterns_df = patterns_df[(patterns_df.T != 0).any()]
 
-            engulfing_days = data[data['Engulfing'] != 0]
-            pair_data[timeframe] = engulfing_days
+            pair_data[timeframe] = patterns_df
         
         pair_stats[pair] = pair_data
 
@@ -33,7 +39,7 @@ try:
         print(f"Pair: {pair}")
         for key, value in data.items():
             print(f"{key}:")
-            print(value[['Engulfing']])
+            print(value)
             print("-------")
 
 except Exception as e:
