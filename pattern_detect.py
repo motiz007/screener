@@ -4,11 +4,11 @@ import pandas as pd
 from datetime import datetime, timedelta
 
 try:
-    end_date = datetime.now().date()
-    start_date = end_date - timedelta(days=2)
-    intervals = ["15m", "1h"]
-    currency_pairs = ["EURUSD=X", "GBPUSD=X", "USDJPY=X"]
-    candlestick_patterns = ["CDLENGULFING", "CDLHAMMER", "CDLDOJI", "CDLHARAMI"]
+    end_date = datetime.now()
+    start_date = end_date - timedelta(hours=4)
+    intervals = ["15m"]
+    currency_pairs = ["EURUSD=X", "GBPUSD=X", "EURGBP=X", "EURJPY=X", "AUDCAD=X", "AUDNZD=X", "GBPAUD=X", "CHFJPY=X"]
+    candlestick_patterns = ["CDLENGULFING", "CDLHAMMER", "CDLDOJI", "CDLHANGINGMAN"]
     pair_stats = {}
 
     for pair in currency_pairs:
@@ -31,9 +31,11 @@ try:
             # Filter out rows where all pattern values are 0
             patterns_df = patterns_df[(patterns_df.T != 0).any()]
 
-            pair_data[timeframe] = patterns_df
+            if not patterns_df.empty:  # Check if the DataFrame is not empty
+                pair_data[timeframe] = patterns_df
         
-        pair_stats[pair] = pair_data
+        if pair_data:  # Check if pair_data dictionary is not empty
+            pair_stats[pair] = pair_data
 
     for pair, data in pair_stats.items():
         print(f"Pair: {pair}")
